@@ -37,7 +37,9 @@ public class WooBot extends ListenerAdapter {
     static VoiceChannel activeChannel;
     public static void main(String[] args) throws LoginException {
 
+        /* you can set your own token by putting it as a command line argument in run configuration */
         String token = args[0];
+        /* discord now requires you to declare a set of actions that your bot is allowed to do */
         JDABuilder jdaBuilder = JDABuilder.create(EnumSet.allOf(GatewayIntent.class));
         jdaBuilder.setToken(token);
         JDA wooBot = jdaBuilder.build();
