@@ -148,7 +148,7 @@ public class WooBot extends ListenerAdapter {
         player.playTrack(trackSupplier.get());
         System.out.println(nextTrack + " is playing");
         String currentTrack = player.getPlayingTrack().getIdentifier();
-        System.out.println("is bot connected? - " + manager.getConnectionStatus());
+        System.out.println("is bot connected? - " + checkIfConnected(manager));
         System.out.println("audio manager is manager of guild: " + manager.getGuild());
 
         if (activeChannel != null) {
@@ -206,5 +206,7 @@ public class WooBot extends ListenerAdapter {
     private static AudioManager getAudioManager(Guild guild) {
         return guild.getAudioManager();
     }
+
+
 }
 
