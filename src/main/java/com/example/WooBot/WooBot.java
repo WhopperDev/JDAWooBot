@@ -34,6 +34,7 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 public class WooBot extends ListenerAdapter {
+    static VoiceChannel activeChannel;
     public static void main(String[] args) throws LoginException {
 
         String token = args[0];
@@ -63,32 +64,32 @@ public class WooBot extends ListenerAdapter {
 
                 if (event.getMessage().getContentRaw().equals("!wo")) {
                     openConnection(guild, member, event.getTextChannel());
-                    playTrack(getAudioManager(guild), () -> getTrack("woooo.mp3"));
+                    playTrack(guild, () -> getTrack("woooo.mp3"));
                 }
 
                 if (event.getMessage().getContentRaw().equals("!gachi")) {
                     openConnection(guild, member, event.getTextChannel());
-                    playTrack(getAudioManager(guild), () -> getTrack("MainThemerevamped.mp3"));
+                    playTrack(guild, () -> getTrack("MainThemerevamped.mp3"));
                 }
 
                 if (event.getMessage().getContentRaw().equals("!gachiporsh")) {
                     openConnection(guild, member, event.getTextChannel());
-                    playTrack(getAudioManager(guild), () -> getTrack("Porsh.mp3"));
+                    playTrack(guild, () -> getTrack("Porsh.mp3"));
                 }
 
                 if (event.getMessage().getContentRaw().equals("!nanowar")) {
                     openConnection(guild, member, event.getTextChannel());
-                    playTrack(getAudioManager(guild), () -> getTrack("Hyusbekistan.mp3"));
+                    playTrack(guild, () -> getTrack("Hyusbekistan.mp3"));
                 }
 
                 if (event.getMessage().getContentRaw().equals("!gargoyle")) {
                     openConnection(guild, member, event.getTextChannel());
-                    playTrack(getAudioManager(guild), () -> getTrack("Gargoyle.mp3"));
+                    playTrack(guild, () -> getTrack("Gargoyle.mp3"));
                 }
 
                 if (event.getMessage().getContentRaw().equals("!zombie")) {
                     openConnection(guild, member, event.getTextChannel());
-                    playTrack(getAudioManager(guild), () -> getTrack("Zombieland.mp3"));
+                    playTrack(guild, () -> getTrack("Zombieland.mp3"));
                 }
 
                 if (event.getMessage().getContentRaw().equals("!stopuu")) {
@@ -100,7 +101,7 @@ public class WooBot extends ListenerAdapter {
             public void onGuildVoiceLeave(@Nonnull GuildVoiceLeaveEvent event) {
                 Guild guild = event.getGuild();
                 AudioManager manager = getAudioManager(guild);
-                VoiceChannel connectedChannel = manager.getConnectedChannel();
+                VoiceChannel connectedChannel = activeChannel;
 
                 if (connectedChannel != null) {
                     Collection<Member> connectedUsers = connectedChannel.getMembers();
@@ -113,8 +114,7 @@ public class WooBot extends ListenerAdapter {
             @Override
             public void onGuildVoiceMove(@Nonnull GuildVoiceMoveEvent event) {
                 Guild guild = event.getGuild();
-                AudioManager manager = guild.getAudioManager();
-                VoiceChannel connectedChannel = manager.getConnectedChannel();
+                VoiceChannel connectedChannel = activeChannel;
 
                 if (connectedChannel != null) {
                     Collection<Member> connectedUsers = connectedChannel.getMembers();
@@ -135,7 +135,8 @@ public class WooBot extends ListenerAdapter {
                 localFile.toURI().toString()), new LocalSeekableInputStream(localFile));
     }
 
-    private static void playTrack(AudioManager manager, Supplier<AudioTrack> trackSupplier) {
+    private static void playTrack(Guild guild, Supplier<AudioTrack> trackSupplier) {
+        AudioManager manager = getAudioManager(guild);
         AudioPlayerManager playerManager = getAudioPlayerManager();
         AudioSourceManagers.registerLocalSource(playerManager);
         AudioPlayer player = getPlayerByPlayerManager(playerManager);
@@ -148,7 +149,7 @@ public class WooBot extends ListenerAdapter {
         System.out.println("is bot connected? - " + manager.getConnectionStatus());
         System.out.println("audio manager is manager of guild: " + manager.getGuild());
 
-        if (checkIfConnected(manager)) {
+        if (activeChannel != null) {
             player.addListener(event -> {
                 System.out.println("player listener is activated on event: " + event);
                 if (event instanceof TrackEndEvent) {
@@ -161,7 +162,7 @@ public class WooBot extends ListenerAdapter {
         } else {
             player.addListener(event -> {
                 player.setPaused(true);
-                System.out.println("paused player listener is activated on event: " + event);
+                System.out.println("pause player listener is activated on event: " + event);
                 System.out.println("what player is playing? - " + trackSupplier.get().getIdentifier());
                 if (event instanceof PlayerPauseEvent)
                     player.destroy();
@@ -171,10 +172,12 @@ public class WooBot extends ListenerAdapter {
 
     private static void closeConnection(AudioManager manager) {
         manager.closeAudioConnection();
+        activeChannel = null;
     }
 
     private static void openConnection(Guild guild, Member member, TextChannel channel) {
         VoiceChannel currentChannel = (Objects.requireNonNull((member.getVoiceState())).getChannel());
+        activeChannel = currentChannel;
         AudioManager manager = getAudioManager(guild);
         try {
             manager.openAudioConnection(currentChannel);
