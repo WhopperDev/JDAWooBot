@@ -28,7 +28,9 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nonnull;
 import javax.security.auth.login.LoginException;
 import java.io.File;
-import java.util.*;
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 public class WooBot extends ListenerAdapter {
@@ -48,27 +50,21 @@ public class WooBot extends ListenerAdapter {
                         event.getAuthor().getName() + ": " +
                         event.getMessage().getContentDisplay()
                 );
-                Guild guild = event.getGuild();
-                Map<String, String> commandTrackMap = new HashMap<>();
-                commandTrackMap.put("!wo", "woooo.mp3");
-                commandTrackMap.put("!gachi", "MainThemerevamped.mp3");
-                commandTrackMap.put("!gachiporsh", "Porsh.mp3");
-                commandTrackMap.put("!nanowar", "Hyusbekistan.mp3");
-                commandTrackMap.put("!gargoyle", "Gargoyle.mp3");
-                commandTrackMap.put("!zombie", "Zombieland.mp3");
-
-
-                String command = event.getMessage().getContentRaw();
-                if(commandTrackMap.containsKey(command)) {
-                    openConnection(event);
-                    playTrackInGuild(guild, () -> getTrack(commandTrackMap.get(command)));
-                }
                 if (event.getAuthor().isBot()) return;
-                if (event.getMessage().getContentRaw().equals("!list")) {
-                    event.getChannel().sendMessage("Command list: !wo, !gachi," +
-                            " !gachiporsh, !nanowar, !gargoyle, !zombie, !stopuu").queue();
+
+                Guild guild = event.getGuild();
+                String command = event.getMessage().getContentRaw();
+                TrackContainer container = new TrackContainer();
+                if (container.containsCommand(command)) {
+                    openConnection(event);
+                    playTrackInGuild(guild, () -> getTrack(container.supplyTrack(command)));
                 }
-                if (event.getMessage().getContentRaw().equals("!stopuu")) {
+
+                if (command.equals("!list")) {
+                    container.printCommands(event);
+                }
+
+                if (command.equals("!stopuu")) {
                     closeConnection(guild);
                 }
             }
@@ -142,6 +138,7 @@ public class WooBot extends ListenerAdapter {
     private static void openConnection(MessageReceivedEvent event) {
         Guild guild = event.getGuild();
         Member member = event.getMember();
+        String mentionAuthor = event.getAuthor().getAsMention();
         TextChannel channel = event.getTextChannel();
         assert member != null;
         VoiceChannel currentChannel = (((Objects.requireNonNull(member.getVoiceState()))).getChannel());
@@ -149,13 +146,12 @@ public class WooBot extends ListenerAdapter {
         try {
             manager.openAudioConnection(currentChannel);
             System.out.println(currentChannel);
-            event.getChannel().sendMessage("Bounded to channel :" + event.getTextChannel().getAsMention()).queue();
         } catch (Throwable error) {
-            channel.sendMessage("You are not connected to any channel!").queue();
+            channel.sendMessage(mentionAuthor + " You are not connected to any channel!").queue();
         }
     }
 
-    private static boolean checkChannelIfConnected (Guild guild){
+    private static boolean checkChannelIfConnected(Guild guild) {
         AudioManager manager = guild.getAudioManager();
         VoiceChannel connectedChannel = manager.getConnectedChannel();
 
@@ -179,10 +175,8 @@ public class WooBot extends ListenerAdapter {
 
 
     /**
-     * @param
-     * manager - this is an instance of AudioManager, which connections we want to check.
-     * @return
-     * true - if number of connected channels are not null, false - if they are null.
+     * @param manager - this is an instance of AudioManager, which connections we want to check.
+     * @return true - if number of connected channels are not null, false - if they are null.
      */
     private static boolean checkManagerIfConnected(AudioManager manager) {
         return manager.getConnectedChannel() != null;
