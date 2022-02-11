@@ -5,7 +5,6 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.event.TrackEndEvent;
-import com.sedmelluq.discord.lavaplayer.player.event.TrackStartEvent;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import com.sedmelluq.discord.lavaplayer.source.local.LocalSeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -46,7 +45,7 @@ public class WooBot extends ListenerAdapter {
             @Override
             public void onMessageReceived(@NotNull MessageReceivedEvent event) throws PermissionException {
 
-                System.out.println("We received a message from " +
+                System.out.println("received a message from " +
                         event.getAuthor().getName() + ": " +
                         event.getMessage().getContentDisplay()
                 );
@@ -91,7 +90,7 @@ public class WooBot extends ListenerAdapter {
 
     @NotNull
     private static Mp3AudioTrack getTrack(String name) {
-        File localFile = new File(Objects.requireNonNull(WooBotTest.class.getClassLoader().getResource(name)).getFile());
+        File localFile = new File(Objects.requireNonNull(WooBot.class.getClassLoader().getResource(name)).getFile());
         return new Mp3AudioTrack(new AudioTrackInfo("1", "2", 3, name, true,
                 localFile.toURI().toString()), new LocalSeekableInputStream(localFile));
     }
@@ -106,25 +105,15 @@ public class WooBot extends ListenerAdapter {
 
         player.playTrack(trackSupplier.get());
         System.out.println(nextTrack + " is playing");
-        String currentTrack = player.getPlayingTrack().getIdentifier();
-        System.out.println("is bot connected? - " + manager.getConnectionStatus());
-        System.out.println("audio manager is manager of guild: " + manager.getGuild());
 
         player.addListener(event -> {
-            System.out.println("player listener is activated on event: " + event);
-            if (event instanceof TrackStartEvent) {
-                System.out.println("is bot connected? - " + manager.getConnectionStatus());
-            }
+            System.out.println(event.toString());
             if (event instanceof TrackEndEvent) {
-                System.out.println(currentTrack + " is playing again");
                 player.playTrack(trackSupplier.get());
             } else {
-                player.setPaused(!checkManagerIfConnected(manager));
-                System.out.println("is player paused? " + player.isPaused());
-                System.out.println("what player was playing? - " + currentTrack);
-                if (!checkManagerIfConnected(manager)) {
+                player.setPaused(!checkConnection(manager));
+                if (!checkConnection(manager)) {
                     audioManager.shutdown();
-                    System.out.println("player was destroyed");
                 }
             }
         });
@@ -178,7 +167,7 @@ public class WooBot extends ListenerAdapter {
      * @param manager - this is an instance of AudioManager, which connections we want to check.
      * @return true - if number of connected channels are not null, false - if they are null.
      */
-    private static boolean checkManagerIfConnected(AudioManager manager) {
+    private static boolean checkConnection(AudioManager manager) {
         return manager.getConnectedChannel() != null;
     }
 }
