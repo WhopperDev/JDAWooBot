@@ -33,6 +33,6 @@ public class TrackContainer {
                 .replace("]", "")
                 .trim();
 
-        event.getTextChannel().sendMessage(formattedString).queue();
+        event.getChannel().sendMessage(formattedString).queue();
     }
 }
